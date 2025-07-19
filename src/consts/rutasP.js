@@ -1,0 +1,18 @@
+module.exports = [
+  { path: '/dto/productos', route: require('../../routes/productos.route') },
+  { path: '/dto/familias', route: require('../../routes/familias.route') },
+  { path: '/dto/albergues', route: require('../../routes/albergues.route') },
+  { path: '/dto/municipalidad', route: require('../../routes/municipalidad.route') },
+  { path: '/dto/capacidadAlbergues', route: require('../../routes/capacidadAlbergues.route') },
+  { path: '/dto/ubicaciones', route: require('../../routes/ubicaciones.route') },
+  { path: '/dto/condicionesEspeciales', route: require('../../routes/condicionesEspeciales.route') },
+  //{ path: '/api/referencias', route: require('../../routes/referencias.route') },
+  { path: '/dto/personas', route: require('../../routes/personas.route') },
+  { path: '/dto/condicionesSalud', route: require('../../routes/condicionesSalud.route') },
+  { path: '/dto/recursosAsignados', route: require('../../routes/recursosAsignados.route') },
+  { path: '/dto/caracteristicasPoblacionales', route: require('../../routes/caracteristicasPoblacionales.route') },
+  { path: '/dto/firmasDigitales', route: require('../../routes/firmasDigitales.route') },
+  { path: '/dto/infraestructuraAlbergues', route: require('../../routes/infraestructuraAlbergues.route') },
+  { path: '/dto/amenazas', route: require('../../routes/amenazas.route') },
+  //{ path: '/api/protegida', route: require('../../routes/protegida.route') },
+];

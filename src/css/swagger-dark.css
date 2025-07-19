@@ -1,0 +1,73 @@
+body {
+  background-color: #121212 !important;
+  color: #ffffff !important;
+}
+
+.swagger-ui {
+  background-color: #121212 !important;
+  color: #ffffff !important;
+}
+
+.topbar {
+  background-color: #1f1f1f !important;
+  border-bottom: 1px solid #333 !important;
+}
+
+.topbar a span {
+  color: #ffffff !important;
+}
+
+.swagger-ui .info,
+.swagger-ui .opblock-summary-description,
+.swagger-ui .opblock-description-wrapper,
+.swagger-ui .markdown,
+.swagger-ui .parameter__name,
+.swagger-ui .parameter__type,
+.swagger-ui .response-col_description,
+.swagger-ui .model-title,
+.swagger-ui .prop-type,
+.swagger-ui .parameter__in {
+  color: #dddddd !important;
+}
+
+.opblock {
+  background-color: #1e1e1e !important;
+  border: 1px solid #333 !important;
+}
+
+.opblock .opblock-summary-method {
+  background-color: #333 !important;
+  color: #fff !important;
+}
+
+.opblock .opblock-summary-path {
+  color: #cfcfcf !important;
+}
+
+.opblock-tag-section,
+.opblock-tag {
+  background-color: #1a1a1a !important;
+  border-color: #333 !important;
+  color: #fff !important;
+}
+
+.model-box {
+  background-color: #1a1a1a !important;
+  border: 1px solid #333 !important;
+}
+
+.tab li {
+  background-color: #1a1a1a !important;
+  color: #fff !important;
+}
+
+.tab li.active {
+  background-color: #333 !important;
+  border-color: #555 !important;
+}
+
+button, select, input {
+  background-color: #262626 !important;
+  color: #fff !important;
+  border: 1px solid #444 !important;
+}
