@@ -90,15 +90,15 @@ class contrasenaController {
                 });
             }
 
-            // Verificar que el usuario existe y está activo
-            const usuario = await contrasenaController.findUserByEmail(correo);
+            // Verificar que el usuario existe y está activo - CORREGIDO
+            const usuario = await AuthController.findUserByEmail(correo);
             if (!usuario) {
                 return res.status(400).json({
                     success: false,
                     error: 'Usuario no encontrado o inactivo'
                 });
             }
-            
+
             // Hashear la nueva contraseña
             const saltRounds = 10;
             const hashedPassword = await bcrypt.hash(nuevaContrasena, saltRounds);
@@ -118,7 +118,6 @@ class contrasenaController {
 
             // Revocar todos los refresh tokens del usuario por seguridad
             try {
-                const AuthController = require('./auth.controller');
                 await AuthController.revokeUserRefreshTokens(usuario.id);
             } catch (tokenError) {
                 console.error('Error revocando tokens:', tokenError);
