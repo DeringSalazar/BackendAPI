@@ -57,6 +57,36 @@ class AuthController {
         });
     }
 
+    // Buscar usuario por nombre de usuario (nueva función)
+    static async findUserByUsername(nombreUsuario) {
+        return new Promise((resolve, reject) => {
+            const query = 'SELECT * FROM Usuario WHERE nombreUsuario = ? AND activo = 1';
+
+            pool.query(query, [nombreUsuario], (error, results) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve(results.length > 0 ? results[0] : null);
+                }
+            });
+        });
+    }
+
+    // Buscar usuario por correo o nombre de usuario (nueva función unificada)
+    static async findUserByEmailOrUsername(identifier) {
+        return new Promise((resolve, reject) => {
+            const query = 'SELECT * FROM Usuario WHERE (correo = ? OR nombreUsuario = ?) AND activo = 1';
+
+            pool.query(query, [identifier, identifier], (error, results) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve(results.length > 0 ? results[0] : null);
+                }
+            });
+        });
+    }
+
     // Verificar contraseña (función de utilidad para login)
     static async verifyPassword(plainPassword, hashedPassword) {
         return await bcrypt.compare(plainPassword, hashedPassword);
@@ -145,21 +175,25 @@ class AuthController {
     // ==================== MÉTODOS DE AUTENTICACIÓN ====================
 
     static async login(req, res) {
-        const { correo, contrasena } = req.body;
+        // Ahora aceptamos tanto 'correo' como 'usuario' como identificador
+        const { correo, usuario, contrasena } = req.body;
+        
+        // El identificador puede venir como 'correo' o 'usuario', o directamente como string
+        const identifier = correo || usuario;
 
         try {
             // Validar que se envíen los datos requeridos
-            if (!correo || !contrasena) {
+            if (!identifier || !contrasena) {
                 return res.status(400).json({
                     success: false,
-                    error: 'Correo y contraseña son requeridos'
+                    error: 'Correo/usuario y contraseña son requeridos'
                 });
             }
 
-            // 1. Buscar usuario por correo
-            const usuario = await AuthController.findUserByEmail(correo);
+            // 1. Buscar usuario por correo o nombre de usuario
+            const usuarioEncontrado = await AuthController.findUserByEmailOrUsername(identifier);
 
-            if (!usuario) {
+            if (!usuarioEncontrado) {
                 return res.status(401).json({
                     success: false,
                     error: 'Credenciales inválidas'
@@ -167,7 +201,7 @@ class AuthController {
             }
 
             // 2. Verificar contraseña
-            const isValidPassword = await AuthController.verifyPassword(contrasena, usuario.contrasenaHash);
+            const isValidPassword = await AuthController.verifyPassword(contrasena, usuarioEncontrado.contrasenaHash);
 
             if (!isValidPassword) {
                 return res.status(401).json({
@@ -178,22 +212,22 @@ class AuthController {
 
             try {
                 // 3. Revocar refresh tokens anteriores (opcional - para mayor seguridad)
-                await AuthController.revokeUserRefreshTokens(usuario.id);
+                await AuthController.revokeUserRefreshTokens(usuarioEncontrado.id);
 
                 // 4. Generar nuevos tokens
                 const { accessToken, refreshToken } = AuthController.generateTokens({
-                    id: usuario.id,
-                    correo: usuario.correo,
-                    rol: usuario.rol,
-                    nombreUsuario: usuario.nombreUsuario,
-                    idMunicipalidad: usuario.idMunicipalidad
+                    id: usuarioEncontrado.id,
+                    correo: usuarioEncontrado.correo,
+                    rol: usuarioEncontrado.rol,
+                    nombreUsuario: usuarioEncontrado.nombreUsuario,
+                    idMunicipalidad: usuarioEncontrado.idMunicipalidad
                 });
 
                 // 5. Guardar refresh token en BD
-                await AuthController.saveRefreshToken(usuario.id, refreshToken);
+                await AuthController.saveRefreshToken(usuarioEncontrado.id, refreshToken);
 
                 // 6. Actualizar última sesión
-                await AuthController.updateLastSession(usuario.id);
+                await AuthController.updateLastSession(usuarioEncontrado.id);
 
                 // 7. Configurar cookie segura con refresh token
                 res.cookie('refreshToken', refreshToken, {
@@ -206,13 +240,14 @@ class AuthController {
                 // 8. Responder con access token y datos básicos del usuario
                 res.json({
                     success: true,
+                    message: 'Login exitoso',
                     accessToken,
                     usuario: {
-                        id: usuario.id,
-                        nombreUsuario: usuario.nombreUsuario,
-                        rol: usuario.rol,
-                        correo: usuario.correo,
-                        idMunicipalidad: usuario.idMunicipalidad
+                        id: usuarioEncontrado.id,
+                        nombreUsuario: usuarioEncontrado.nombreUsuario,
+                        rol: usuarioEncontrado.rol,
+                        correo: usuarioEncontrado.correo,
+                        idMunicipalidad: usuarioEncontrado.idMunicipalidad
                     }
                 });
 
@@ -244,13 +279,21 @@ class AuthController {
                 });
             }
 
-            // Verificar si el usuario ya existe
-            const existingUser = await AuthController.findUserByEmail(correo);
-
-            if (existingUser) {
+            // Verificar si el usuario ya existe por correo
+            const existingUserByEmail = await AuthController.findUserByEmail(correo);
+            if (existingUserByEmail) {
                 return res.status(409).json({
                     success: false,
-                    error: 'El usuario ya existe'
+                    error: 'Ya existe un usuario con este correo electrónico'
+                });
+            }
+
+            // Verificar si el usuario ya existe por nombre de usuario
+            const existingUserByUsername = await AuthController.findUserByUsername(nombreUsuario);
+            if (existingUserByUsername) {
+                return res.status(409).json({
+                    success: false,
+                    error: 'Ya existe un usuario con este nombre de usuario'
                 });
             }
 
@@ -368,8 +411,17 @@ class AuthController {
                     });
                 }
 
-                // Buscar datos completos del usuario
-                const usuario = await AuthController.findUserByEmail(tokenData.correo || '');
+                // Buscar datos completos del usuario por ID
+                const usuario = await new Promise((resolve, reject) => {
+                    const userQuery = 'SELECT * FROM Usuario WHERE id = ? AND activo = 1';
+                    pool.query(userQuery, [decoded.id], (error, results) => {
+                        if (error) {
+                            reject(error);
+                        } else {
+                            resolve(results.length > 0 ? results[0] : null);
+                        }
+                    });
+                });
 
                 if (!usuario) {
                     return res.status(403).json({
